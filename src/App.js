@@ -97,20 +97,20 @@ export const App = () => {
 		});
 	};
 
-	// const onBlur = ({ target }) => {
-	// 	let newError = null;
-	// 	if (target.value.length < 3) {
-	// 		newError = 'Ошибка. Должно быть не меньше 3 символов';
-	// 	} else if (
-	// 		target.value !== password &&
-	// 		password !== '' &&
-	// 		repeatPassword !== ''
-	// 	) {
-	// 		newError = 'Пароли неодинаковые. Проверьте правильность ввода пароля';
-	// 	}
+	const onBlur = ({ target }) => {
+		let newError = null;
+		if (target.value.length < 3) {
+			newError = 'Ошибка. Должно быть не меньше 3 символов';
+		} else if (
+			target.value !== password &&
+			password !== '' &&
+			repeatPassword !== ''
+		) {
+			newError = 'Пароли неодинаковые. Проверьте правильность ввода пароля';
+		}
 
-	// 	// setInputErrors(newError);
-	// };
+		setInputErrors(newError);
+	};
 
 	return (
 		<div className={styles.container}>
@@ -124,7 +124,7 @@ export const App = () => {
 					value={email}
 					placeholder="Почта"
 					onChange={onEmailChange}
-					// onBlur={onBlur}
+					onBlur={onBlur}
 				/>
 				<label type="password" value={password}>
 					Введите пароль:
@@ -134,7 +134,7 @@ export const App = () => {
 					value={password}
 					placeholder="Пароль"
 					onChange={onPasswordChange}
-					// onBlur={onBlur}
+					onBlur={onBlur}
 				/>
 				<label type="password" value={password}>
 					Повторите пароль:
@@ -144,7 +144,7 @@ export const App = () => {
 					value={repeatPassword}
 					placeholder="Пароль"
 					onChange={onRepeatPasswordChange}
-					// onBlur={onBlur}
+					onBlur={onBlur}
 				/>
 				<button ref={submitButtonRef} type="submit" disabled={inputErrors}>
 					Зарегистрироваться
