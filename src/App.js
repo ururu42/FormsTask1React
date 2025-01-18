@@ -1,9 +1,38 @@
 import { useState } from 'react';
 import { useRef } from 'react';
 import styles from './App.module.css'; // декларативный стиль
+import * as yup from 'yup';
 
 const sendFormDataToConsole = (formdata) => {
 	console.log(formdata);
+};
+
+const emailChangeScheme = yup
+	.string()
+	.matches(
+		/^[\w_.@]*$/,
+		'Неверный email. Допустимые символы: буквы, цифры, нижнее подчеркивание и @',
+	)
+	.max(20, 'Неверный email. Должно быть не больше 20 символов');
+
+const passwordChangeScheme = yup
+	.string()
+	.matches(
+		/^[\w_]*$/,
+		'Неверный пароль. Допустимые символы: буквы, цифры и нижнее подчеркивание',
+	)
+	.max(20, 'Неверный email. Должно быть не больше 20 символов');
+
+const validateAndGetErrorMessage = (schema, value) => {
+	let errorMessage = null;
+
+	try {
+		schema.validateSync(value, { abortEarly: false });
+	} catch ({ errors }) {
+		errorMessage = errors.join('\n');
+	}
+
+	return errorMessage;
 };
 
 export const App = () => {
@@ -19,6 +48,23 @@ export const App = () => {
 		event.preventDefault();
 		sendFormDataToConsole({ email, password, repeatPassword });
 	};
+
+	const isSamePasswords = () => {
+		if (repeatPassword !== password && password !== '' && repeatPassword !== '') {
+			return false;
+		} else {
+			return true;
+		}
+	};
+
+	const allInputBlurScheme = yup
+		.string()
+		.min(3, 'Ошибка. Должно быть не меньше 3 символов')
+		.test(
+			'isSamePasswords',
+			'Пароли неодинаковые. Проверьте правильность ввода пароля',
+			isSamePasswords,
+		);
 
 	const setFocusOnButton = (email, password, repeatPassword, inputErrors) => {
 		console.log('focus?', {
@@ -41,14 +87,7 @@ export const App = () => {
 	const onEmailChange = ({ target }) => {
 		setEmail(target.value);
 
-		let newError = null;
-
-		if (!/^[\w_.@]*$/.test(target.value)) {
-			newError =
-				'Неверный email. Допустимые символы: буквы, цифры, нижнее подчеркивание и @';
-		} else if (target.value.length > 20) {
-			newError = 'Неверный email. Должно быть не больше 20 символов';
-		}
+		const newError = validateAndGetErrorMessage(emailChangeScheme, target.value);
 
 		setInputErrors(newError);
 
@@ -60,14 +99,7 @@ export const App = () => {
 	const onPasswordChange = ({ target }) => {
 		setPassword(target.value);
 
-		let newError = null;
-
-		if (!/^[\w_]*$/.test(target.value)) {
-			newError =
-				'Неверный пароль. Допустимые символы: буквы, цифры и нижнее подчеркивание';
-		} else if (target.value.length > 20) {
-			newError = 'Неверный пароль. Должно быть не больше 20 символов';
-		}
+		const newError = validateAndGetErrorMessage(passwordChangeScheme, target.value);
 
 		setInputErrors(newError);
 
@@ -79,17 +111,7 @@ export const App = () => {
 	const onRepeatPasswordChange = ({ target }) => {
 		setRepeatPassword(target.value);
 
-		console.log('repeat password', target.value);
-
-		let newError = null;
-
-		if (!/^[\w_]*$/.test(target.value)) {
-			newError =
-				'Неверный пароль. Допустимые символы: буквы, цифры и нижнее подчеркивание';
-		} else if (target.value.length > 20) {
-			newError = 'Неверный пароль. Должно быть не больше 20 символов';
-		}
-
+		const newError = validateAndGetErrorMessage(passwordChangeScheme, target.value);
 		setInputErrors(newError);
 
 		setTimeout(() => {
@@ -98,16 +120,7 @@ export const App = () => {
 	};
 
 	const onBlur = ({ target }) => {
-		let newError = null;
-		if (target.value.length < 3) {
-			newError = 'Ошибка. Должно быть не меньше 3 символов';
-		} else if (
-			target.value !== password &&
-			password !== '' &&
-			repeatPassword !== ''
-		) {
-			newError = 'Пароли неодинаковые. Проверьте правильность ввода пароля';
-		}
+		const newError = validateAndGetErrorMessage(allInputBlurScheme, target.value);
 
 		setInputErrors(newError);
 	};
