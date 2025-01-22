@@ -1,167 +1,118 @@
-import { useState } from 'react';
-import { useRef } from 'react';
 import styles from './App.module.css'; // декларативный стиль
-import * as yup from 'yup';
+import { useForm } from 'react-hook-form';
 
 const sendFormDataToConsole = (formdata) => {
 	console.log(formdata);
 };
 
-const emailChangeScheme = yup
-	.string()
-	.matches(
-		/^[\w_.@]*$/,
-		'Неверный email. Допустимые символы: буквы, цифры, нижнее подчеркивание и @',
-	)
-	.max(20, 'Неверный email. Должно быть не больше 20 символов');
-
-const passwordChangeScheme = yup
-	.string()
-	.matches(
-		/^[\w_]*$/,
-		'Неверный пароль. Допустимые символы: буквы, цифры и нижнее подчеркивание',
-	)
-	.max(20, 'Неверный email. Должно быть не больше 20 символов');
-
-const validateAndGetErrorMessage = (schema, value) => {
-	let errorMessage = null;
-
-	try {
-		schema.validateSync(value, { abortEarly: false });
-	} catch ({ errors }) {
-		errorMessage = errors.join('\n');
-	}
-
-	return errorMessage;
-};
-
 export const App = () => {
-	const [email, setEmail] = useState('');
-	const [password, setPassword] = useState('');
-	const [repeatPassword, setRepeatPassword] = useState('');
+	const {
+		register,
+		watch,
+		handleSubmit,
+		formState: { errors, isValid },
+	} = useForm({
+		defaultValues: {
+			email: '',
+			password: '',
+			repeatPassword: '',
+		},
+	});
 
-	const [inputErrors, setInputErrors] = useState(null);
-
-	const submitButtonRef = useRef(null);
-
-	const onSubmit = (event) => {
-		event.preventDefault();
-		sendFormDataToConsole({ email, password, repeatPassword });
+	const emailProps = {
+		minLength: { value: 3, message: 'Ошибка. Должно быть не меньше 3 символов' },
+		maxLength: {
+			value: 25,
+			message: 'Неверный email. Должно быть не больше 20 символов',
+		},
+		pattern: {
+			value: /^[\w_.@]*$/,
+			message:
+				'Неверный email. Допустимые символы: буквы, цифры, нижнее подчеркивание и @',
+		},
 	};
 
-	const isSamePasswords = () => {
-		if (repeatPassword !== password && password !== '' && repeatPassword !== '') {
-			return false;
-		} else {
-			return true;
-		}
+	const passwordProps = {
+		minLength: { value: 3, message: 'Ошибка. Должно быть не меньше 3 символов' },
+		maxLength: {
+			value: 20,
+			message: 'Неверный пароль. Должно быть не больше 20 символов',
+		},
+		pattern: {
+			value: /^[\w_]*$/,
+			message:
+				'Неверный email. Допустимые символы: буквы, цифры, нижнее подчеркивание и @',
+		},
+
+		validate: {
+			isSamePassword: (repeatPassword) => {
+				if (watch('password') !== repeatPassword) {
+					return 'Пароли не совпадают. Проверьте правильность ввода паролей.';
+				}
+			},
+		},
 	};
 
-	const allInputBlurScheme = yup
-		.string()
-		.min(3, 'Ошибка. Должно быть не меньше 3 символов')
-		.test(
-			'isSamePasswords',
-			'Пароли неодинаковые. Проверьте правильность ввода пароля',
-			isSamePasswords,
-		);
-
-	const setFocusOnButton = (email, password, repeatPassword, inputErrors) => {
-		console.log('focus?', {
-			email,
-			password,
-			repeatPassword,
-			inputErrors,
-			submit: submitButtonRef.current,
-		});
-		if (
-			email !== '' &&
-			password !== '' &&
-			repeatPassword === password &&
-			inputErrors === null
-		) {
-			submitButtonRef.current.focus();
-		}
-	};
-
-	const onEmailChange = ({ target }) => {
-		setEmail(target.value);
-
-		const newError = validateAndGetErrorMessage(emailChangeScheme, target.value);
-
-		setInputErrors(newError);
-
-		setTimeout(() => {
-			setFocusOnButton(target.value, password, repeatPassword, newError);
-		});
-	};
-
-	const onPasswordChange = ({ target }) => {
-		setPassword(target.value);
-
-		const newError = validateAndGetErrorMessage(passwordChangeScheme, target.value);
-
-		setInputErrors(newError);
-
-		setTimeout(() => {
-			setFocusOnButton(email, target.value, repeatPassword, newError);
-		});
-	};
-
-	const onRepeatPasswordChange = ({ target }) => {
-		setRepeatPassword(target.value);
-
-		const newError = validateAndGetErrorMessage(passwordChangeScheme, target.value);
-		setInputErrors(newError);
-
-		setTimeout(() => {
-			setFocusOnButton(email, password, target.value, newError);
-		});
-	};
-
-	const onBlur = ({ target }) => {
-		const newError = validateAndGetErrorMessage(allInputBlurScheme, target.value);
-
-		setInputErrors(newError);
-	};
+	const emailError = errors.email?.message;
+	const passwordError = errors.password?.message;
+	const repeatPasswordError = errors.repeatPassword?.message;
 
 	return (
 		<div className={styles.container}>
-			<form onSubmit={onSubmit}>
-				{inputErrors && <div className={styles.errors}>{inputErrors}</div>}
-				<label type="text" value={email}>
+			<form onSubmit={handleSubmit(sendFormDataToConsole)}>
+				{emailError && <div className={styles.errors}>{emailError}</div>}
+				<label type="text" name="email">
 					Введите email:
 				</label>
 				<input
 					type="text"
-					value={email}
+					name="email"
 					placeholder="Почта"
-					onChange={onEmailChange}
-					onBlur={onBlur}
+					{...register('email', emailProps)}
 				/>
-				<label type="password" value={password}>
+				{passwordError && <div className={styles.errors}>{passwordError}</div>}
+				<label type="password" name="password">
 					Введите пароль:
 				</label>
 				<input
 					type="password"
-					value={password}
+					name="password"
 					placeholder="Пароль"
-					onChange={onPasswordChange}
-					onBlur={onBlur}
+					{...register('password', passwordProps)}
 				/>
-				<label type="password" value={password}>
+				{repeatPasswordError && (
+					<div className={styles.errors}>{repeatPasswordError}</div>
+				)}
+				<label type="password" name="repeat-password">
 					Повторите пароль:
 				</label>
 				<input
 					type="password"
-					value={repeatPassword}
+					name="repeat-password"
 					placeholder="Пароль"
-					onChange={onRepeatPasswordChange}
-					onBlur={onBlur}
+					{...register('repeatPassword', passwordProps)}
 				/>
-				<button ref={submitButtonRef} type="submit" disabled={inputErrors}>
-					Зарегистрироваться
-				</button>
+				{isValid && (
+					<button
+						type="submit"
+						disabled={
+							!!emailError || !!passwordError || !!repeatPasswordError
+						}
+						autoFocus
+					>
+						Зарегистрироваться
+					</button>
+				)}
+				{!isValid && (
+					<button
+						type="submit"
+						disabled={
+							!!emailError || !!passwordError || !!repeatPasswordError
+						}
+					>
+						Зарегистрироваться
+					</button>
+				)}
 			</form>
 		</div>
 	);
